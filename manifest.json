@@ -1,0 +1,73 @@
+{
+	"format_version": 2,
+	"header": {
+		"description": "",
+		"name": "LEVEL UP",
+		"uuid": "e53472b1-f256-4ab7-873a-9aa024a0f48c",
+		"version": [
+			0,
+			0,
+			1
+		],
+		"min_engine_version": [
+			1,
+			21,
+			50
+		]
+	},
+	"modules": [
+		{
+			"description": "",
+			"type": "data",
+			"uuid": "54fb6c18-1da0-4b2b-8d2e-72e523e63cb4",
+			"version": [
+				1,
+				0,
+				0
+			]
+		},
+		{
+			"type": "script",
+			"language": "javascript",
+			"uuid": "07354d82-5ab9-490d-b741-64d98654111e",
+			"entry": "scripts/main.js",
+			"version": [
+				1,
+				0,
+				0
+			]
+		}
+	],
+	"dependencies": [
+		{
+			"module_name": "@minecraft/server",
+			"version": "2.0.0-beta"
+		},
+		{
+			"module_name": "@minecraft/server-ui",
+			"version": "2.0.0-beta"
+		},
+		{
+			"uuid": "7bff5b9d-e2b1-4d23-9d16-2926bf221012",
+			"version": [
+				1,
+				0,
+				0
+			]
+		}
+	],
+	"metadata": {
+		"authors": [
+			"rizu2, MCreator"
+		],
+		"url": "https://mcreator.net",
+		"generated_with": {
+			"bridge": [
+				"2.7.46"
+			],
+			"dash": [
+				"0.11.7"
+			]
+		}
+	}
+}
