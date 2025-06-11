@@ -38,6 +38,38 @@ function numgen(min, max, mean, stddev) {
     return num;
 }
 
+const tierConfigs = {
+    "Tier 1 Mobs": [3, 5, 4, 1],
+    "Tier 2 Mobs": [15, 20, 17, 2],
+    "Tier 3 Mobs": [60, 70, 65, 3],
+    "Tier 4 Mobs": [130, 150, 140, 7],
+    "Tier 5 Mobs": [220, 250, 235, 15],
+    "Warden": [10000, 10000, 10000, 0],
+    "Wither": [25000, 25000, 25000, 0],
+    "Ender Dragon": [50000, 50000, 50000, 0]
+};
+
+const mobTiers = {
+    "Tier 1 Mobs": [
+        "minecraft:slime", "minecraft:magma_cube"
+    ],
+    "Tier 2 Mobs": [
+        "minecraft:creeper", "minecraft:endermite", "minecraft:phantom", "minecraft:silverfish", "minecraft:skeleton", "minecraft:spider", "minecraft:cave_spider", "minecraft:zombie", "minecraft:zombie_villager"
+    ],
+    "Tier 3 Mobs": [
+        "minecraft:blaze", "minecraft:bogged", "minecraft:breeze", "minecraft:creaking", "minecraft:husk", "minecraft:enderman", "minecraft:shulker", "minecraft:stray", "minecraft:witch"
+    ],
+    "Tier 4 Mobs": [
+        "minecraft:ghast", "minecraft:hoglin", "minecraft:piglin", "minecraft:pillager", "minecraft:vex", "minecraft:zoglin", "minecraft:zombie_pigman"
+    ],
+    "Tier 5 Mobs": [
+        "minecraft:elder_guardian", "minecraft:guardian", "minecraft:evocation_illager", "minecraft:piglin_brute", "minecraft:ravager", "minecraft:vindicator", "minecraft:wither_skeleton"
+    ],
+    "Warden": ["minecraft:warden"],
+    "Wither": ["minecraft:wither"],
+    "Ender Dragon": ["minecraft:ender_dragon"]
+};
+
 let txtclr =  false;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - MENU - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -88,21 +120,167 @@ world.beforeEvents.itemUse.subscribe(data => {
 
 // - - - - - - - - - - - - - - - - - - - - - - - v ADMIN v - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    function Admin() {
-        new ActionFormData()
-            .title(`§l§bADMIN CONTROLS`)
-            .button("§o§bCombat Profile")
-            .button("§o§bLumber Profile")
-            .button("§o§bMining Profile")
-            .button("§o§bFarming Profile")
-            .button(`§l§cBack`)
-            .show(player).then(r => {
-                if (r.selection == 0) main(player)
-                if (r.selection == 1) main(player)
-                if (r.selection == 2) main(player)
-                if (r.selection == 3) main(player)
-                if (r.selection == 4) main(player)
-            })
+    function Admin(player) {
+        const form = new ActionFormData()
+            .title("§l§cAdmin Controls")
+            .body(`§fWelcome §a${player.nameTag}§f!\nChoose a Option Below!`)
+            .button(`§bEdit Tier1 XP`)
+            .button(`§bEdit Tier2 XP`)
+            .button(`§bEdit Tier3 XP`)
+            .button(`§bEdit Tier4 XP`)
+            .button(`§bEdit Tier5 XP`)
+            .button(`§bEdit Warden XP`)
+            .button(`§bEdit Wither XP`)
+            .button(`§bEdit Ender Dragon XP`)
+            .button(`§cClose`)
+
+        form.show(player).then(r => {
+            if (r.selection == 0) tier1(player)
+            if (r.selection == 1) tier2(player)
+            if (r.selection == 2) tier3(player)
+            if (r.selection == 3) tier4(player)
+            if (r.selection == 4) tier5(player)
+            if (r.selection == 5) warden(player)
+            if (r.selection == 6) wither(player)
+            if (r.selection == 7) enderDragon(player)
+            if (r.selection == 8) main(player)
+        })
+    }
+
+    function tier1() {
+        const form = new ModalFormData()
+            .title("§l§bEdit Tier 1 XP")
+            .textField("§fEnter new XP range (min, max, mean, stddev):", "3, 5, 4, 1");
+
+        form.show(player).then(r => {
+            if (r.canceled) return;
+            const input = r.formValues[0].split(",").map(Number);
+            if (input.length === 4 && input.every(num => !isNaN(num))) {
+                tierConfigs["Tier 1 Mobs"] = input;
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 1 XP updated to: ${input.join(", ")}"}]}`);
+            } else {
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            }
+        });
+    }
+
+    function tier2() {
+        const form = new ModalFormData()
+            .title("§l§bEdit Tier 2 XP")
+            .textField("§fEnter new XP range (min, max, mean, stddev):", "15, 20, 7, 2");
+
+        form.show(player).then(r => {
+            if (r.canceled) return;
+            const input = r.formValues[0].split(",").map(Number);
+            if (input.length === 4 && input.every(num => !isNaN(num))) {
+                tierConfigs["Tier 1 Mobs"] = input;
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 2 XP updated to: ${input.join(", ")}"}]}`);
+            } else {
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            }
+        });
+    }
+
+    function tier3() {
+        const form = new ModalFormData()
+            .title("§l§bEdit Tier 3 XP")
+            .textField("§fEnter new XP range (min, max, mean, stddev):", "60, 70, 65, 3");
+
+        form.show(player).then(r => {
+            if (r.canceled) return;
+            const input = r.formValues[0].split(",").map(Number);
+            if (input.length === 4 && input.every(num => !isNaN(num))) {
+                tierConfigs["Tier 1 Mobs"] = input;
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 3 XP updated to: ${input.join(", ")}"}]}`);
+            } else {
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            }
+        });
+    }
+
+    function tier4() {
+        const form = new ModalFormData()
+            .title("§l§bEdit Tier 4 XP")
+            .textField("§fEnter new XP range (min, max, mean, stddev):", "130, 150, 140, 7");
+
+        form.show(player).then(r => {
+            if (r.canceled) return;
+            const input = r.formValues[0].split(",").map(Number);
+            if (input.length === 4 && input.every(num => !isNaN(num))) {
+                tierConfigs["Tier 1 Mobs"] = input;
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 4 XP updated to: ${input.join(", ")}"}]}`);
+            } else {
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            }
+        });
+    }
+
+    function tier5() {
+        const form = new ModalFormData()
+            .title("§l§bEdit Tier 5 XP")
+            .textField("§fEnter new XP range (min, max, mean, stddev):", "220, 250, 235, 15");
+
+        form.show(player).then(r => {
+            if (r.canceled) return;
+            const input = r.formValues[0].split(",").map(Number);
+            if (input.length === 4 && input.every(num => !isNaN(num))) {
+                tierConfigs["Tier 1 Mobs"] = input;
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 5 XP updated to: ${input.join(", ")}"}]}`);
+            } else {
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            }
+        });
+    }
+
+    function warden() {
+        const form = new ModalFormData()
+            .title("§l§bEdit Warden XP")
+            .textField("§fEnter new XP value:", "10000");
+
+        form.show(player).then(r => {
+            if (r.canceled) return;
+            const input = parseInt(r.formValues[0]);
+            if (!isNaN(input)) {
+                tierConfigs["Warden"] = [input, input, input, 0];
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aWarden XP updated to: ${input}"}]}`);
+            } else {
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter a valid number."}]}`);
+            }
+        });
+    }
+
+    function wither() {
+        const form = new ModalFormData()
+            .title("§l§bEdit Wither XP")
+            .textField("§fEnter new XP value:", "25000");
+
+        form.show(player).then(r => {
+            if (r.canceled) return;
+            const input = parseInt(r.formValues[0]);
+            if (!isNaN(input)) {
+                tierConfigs["Wither"] = [input, input, input, 0];
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aWither XP updated to: ${input}"}]}`);
+            } else {
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter a valid number."}]}`);
+            }
+        });
+    }
+
+    function enderDragon() {
+        const form = new ModalFormData()
+            .title("§l§bEdit Ender Dragon XP")
+            .textField("§fEnter new XP value:", "50000");
+
+        form.show(player).then(r => {
+            if (r.canceled) return;
+            const input = parseInt(r.formValues[0]);
+            if (!isNaN(input)) {
+                tierConfigs["Ender Dragon"] = [input, input, input, 0];
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aEnder Dragon XP updated to: ${input}"}]}`);
+            } else {
+                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter a valid number."}]}`);
+            }
+        });
     }
 
 // - - - - - - - - - - - - - - - - - - - - - - - ^ ADMIN ^ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -133,7 +311,7 @@ world.beforeEvents.itemUse.subscribe(data => {
                 .show(player).then(r => {
                     if (r.selection == 0) main(player)
                 });
-        } else if (combatLVL >= 20) {
+        } else if (combatLVL >= 50) {
             new ActionFormData()
                 .title(`§l§bCombat Profile`)
                 .body(
@@ -173,7 +351,7 @@ world.beforeEvents.itemUse.subscribe(data => {
     function Ascension(player) {
         const combatLVL = getScore("combatLVL", player)
         const combatASC = getScore("combatASC", player)
-        const canAscend = combatLVL >= 20 && combatASC < 5;
+        const canAscend = combatLVL >= 50 && combatASC < 5;
 
         let form = new ActionFormData()
             .title("§l§dCombat Ascension")
@@ -241,410 +419,64 @@ world.afterEvents.entityHitEntity.subscribe((event) => {
     attackers.add(damagingEntity);
 });
 
-// On death, reward all attackers
 world.afterEvents.entityDie.subscribe((mcch) => {
     const deadEntity = mcch.deadEntity;
     const attackers = mobAttackers.get(deadEntity);
     if (!attackers) return;
 
     for (const killer of attackers) {
-    
-        if (
-            deadEntity.typeId === `minecraft:magma_cube` ||
-            deadEntity.typeId === `minecraft:slime`
-        ) {
-            const randomXP = numgen(3, 5, 4, 1); //min, max, mean, stddev
-
-            addScore("combatXP", killer, randomXP);
-            addScore("overallXP", killer, randomXP);
-
-            let combatXP = getScore("combatXP", killer)
-            let combatLVL = getScore("combatLVL", killer)
-            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
-            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
-            let combatASC = getScore("combatASC", killer)
-
-            txtclr = !txtclr;
-            const color = txtclr ? "§e" : "§f";
-            system.runTimeout(() => {
-                killer.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
-            }, 0);
-
-            while (combatXP >= combatlimitXP) {
-                combatXP -= combatNextLVL;
-                combatLVL++;
-                combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-                combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-
-                setScore("combatXP", killer, combatXP);
-                setScore("combatLVL", killer, combatLVL);
-                setScore("combatNextLVL", killer, combatNextLVL);
-                setScore("combatlimitXP", killer, combatlimitXP);
-
-                system.runTimeout(() => {
-                    deadEntity.runCommand(`title @p title Combat Leveled up!`);
-                }, 0);
-
-                if (combatLVL >= 20 && combatASC < 5) {
-                    system.runTimeout(() => {
-                        player.runCommand(`title @s title Combat Ascension Ready!`);
-                    }, 60);
-                    break;
-                }
+        // Find the tier for this mob
+        let foundTier = null;
+        for (const [tier, mobs] of Object.entries(mobTiers)) {
+            if (mobs.includes(deadEntity.typeId)) {
+                foundTier = tier;
+                break;
             }
         }
+        if (!foundTier) continue;
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        const [min, max, mean, stddev] = tierConfigs[foundTier];
+        const randomXP = numgen(min, max, mean, stddev);
 
-        if (
-            deadEntity.typeId === `minecraft:creeper` ||
-            deadEntity.typeId === `minecraft:endermite` ||
-            deadEntity.typeId === `minecraft:phantom` ||
-            deadEntity.typeId === `minecraft:silverfish` ||
-            deadEntity.typeId === `minecraft:skeleton` ||
-            deadEntity.typeId === `minecraft:spider` ||
-            deadEntity.typeId === `minecraft:cave_spider` ||
-            deadEntity.typeId === `minecraft:zombie` ||
-            deadEntity.typeId === `minecraft:zombie_villager`
-        ) {
+        addScore("combatXP", killer, randomXP);
+        addScore("overallXP", killer, randomXP);
 
-            const randomXP = numgen(15, 20, 17, 2); //min, max, mean, stddev
+        let combatXP = getScore("combatXP", killer)
+        let combatLVL = getScore("combatLVL", killer)
+        let combatNextLVL = getScore("combatNextLVL", killer) || 100;
+        let combatlimitXP = getScore("combatlimitXP", killer) || 100;
+        let combatASC = getScore("combatASC", killer)
 
-            addScore("combatXP", killer, randomXP);
-            addScore("overallXP", killer, randomXP);
+        txtclr = !txtclr;
+        const color = txtclr ? "§e" : "§f";
+        system.runTimeout(() => {
+            killer.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
+        }, 0);
 
-            let combatXP = getScore("combatXP", killer)
-            let combatLVL = getScore("combatLVL", killer)
-            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
-            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
-            let combatASC = getScore("combatASC", killer)
+        while (combatXP >= combatlimitXP) {
+            combatXP -= combatNextLVL;
+            combatLVL++;
+            combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.6));
+            combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.6));
 
-            txtclr = !txtclr;
-            const color = txtclr ? "§e" : "§f";
+            setScore("combatXP", killer, combatXP);
+            setScore("combatLVL", killer, combatLVL);
+            setScore("combatNextLVL", killer, combatNextLVL);
+            setScore("combatlimitXP", killer, combatlimitXP);
+
             system.runTimeout(() => {
-                killer.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
+                killer.runCommand(`title @s title Combat Leveled up!`);
             }, 0);
 
-            while (combatXP >= combatlimitXP) {
-                combatXP -= combatNextLVL;
-                combatLVL++;
-                combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-                combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-
-                setScore("combatXP", killer, combatXP);
-                setScore("combatLVL", killer, combatLVL);
-                setScore("combatNextLVL", killer, combatNextLVL);
-                setScore("combatlimitXP", killer, combatlimitXP);
-
+            if (combatLVL >= 50 && combatASC < 5) {
                 system.runTimeout(() => {
-                    deadEntity.runCommand(`title @p title Combat Leveled up!`);
-                }, 0);
-
-                if (combatLVL >= 20 && combatASC < 5) {
-                    system.runTimeout(() => {
-                        killer.runCommand(`title @s title Combat Ascension Ready!`);
-                    }, 60);
-                    break;
-                }
+                    killer.runCommand(`title @s title Combat Ascension Ready!`);
+                }, 60);
+                break;
             }
         }
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-        if (
-            deadEntity.typeId === `minecraft:blaze` ||
-            deadEntity.typeId === `minecraft:bogged` ||
-            deadEntity.typeId === `minecraft:breeze` ||
-            deadEntity.typeId === `minecraft:creaking` ||
-            deadEntity.typeId === `minecraft:husk` ||
-            deadEntity.typeId === `minecraft:enderman` ||
-            deadEntity.typeId === `minecraft:shulker` ||
-            deadEntity.typeId === `minecraft:stray` ||
-            deadEntity.typeId === `minecraft:witch`
-        ) {
-            const randomXP = numgen(60, 70, 65, 3); //min, max, mean, stddev
-
-            addScore("combatXP", player, randomXP);
-            addScore("overallXP", killer, randomXP);
-
-            let combatXP = getScore("combatXP", killer)
-            let combatLVL = getScore("combatLVL", killer)
-            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
-            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
-            let combatASC = getScore("combatASC", killer)
-
-            txtclr = !txtclr;
-            const color = txtclr ? "§e" : "§f";
-            system.runTimeout(() => {
-                deadEntity.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
-            }, 0);
-
-            while (combatXP >= combatlimitXP) {
-                combatXP -= combatNextLVL;
-                combatLVL++;
-                combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-                combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-
-                setScore("combatXP", player, combatXP);
-                setScore("combatLVL", player, combatLVL);
-                setScore("combatNextLVL", player, combatNextLVL);
-                setScore("combatlimitXP", player, combatlimitXP);
-
-                system.runTimeout(() => {
-                    deadEntity.runCommand(`title "${player.name}" title Combat Leveled up!`);
-                }, 0);
-
-                if (combatLVL >= 20 && combatASC < 5) {
-                    system.runTimeout(() => {
-                        player.runCommand(`title @s title Combat Ascension Ready!`);
-                    }, 60);
-                    break;
-                }
-            }
-        }
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-        if (
-            deadEntity.typeId === `minecraft:ghast` ||
-            deadEntity.typeId === `minecraft:hoglin` ||
-            deadEntity.typeId === `minecraft:piglin` ||
-            deadEntity.typeId === `minecraft:pillager` ||
-            deadEntity.typeId === `minecraft:vex` ||
-            deadEntity.typeId === `minecraft:zoglin` ||
-            deadEntity.typeId === `minecraft:zombie_pigman`
-        ) {
-            const randomXP = numgen(130, 150, 140, 7); //min, max, mean, stddev
-
-            addScore("combatXP", player, randomXP);
-            addScore("overallXP", killer, randomXP);
-
-            let combatXP = getScore("combatXP", killer)
-            let combatLVL = getScore("combatLVL", killer)
-            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
-            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
-            let combatASC = getScore("combatASC", killer)
-
-            txtclr = !txtclr;
-            const color = txtclr ? "§e" : "§f";
-            system.runTimeout(() => {
-                deadEntity.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
-            }, 0);
-
-            while (combatXP >= combatlimitXP) {
-                combatXP -= combatNextLVL;
-                combatLVL++;
-                combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-                combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-
-                setScore("combatXP", player, combatXP);
-                setScore("combatLVL", player, combatLVL);
-                setScore("combatNextLVL", player, combatNextLVL);
-                setScore("combatlimitXP", player, combatlimitXP);
-
-                system.runTimeout(() => {
-                    deadEntity.runCommand(`title "${player.name}" title Combat Leveled up!`);
-                }, 0);
-
-                if (combatLVL >= 20 && combatASC < 5) {
-                    system.runTimeout(() => {
-                        player.runCommand(`title @s title Combat Ascension Ready!`);
-                    }, 60);
-                    break;
-                }
-            }
-        }
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-        if (
-            deadEntity.typeId === `minecraft:elder_guardian` ||
-            deadEntity.typeId === `minecraft:guardian` ||
-            deadEntity.typeId === `minecraft:evocation_illager` ||
-            deadEntity.typeId === `minecraft:piglin_brute` ||
-            deadEntity.typeId === `minecraft:ravager` ||
-            deadEntity.typeId === `minecraft:vindicator` ||
-            deadEntity.typeId === `minecraft:wither_skeleton`
-        ) {
-            const randomXP = numgen(220, 250, 235, 15); //min, max, mean, stddev
-            
-            addScore("combatXP", player, randomXP);
-            addScore("overallXP", killer, randomXP);
-
-            let combatXP = getScore("combatXP", killer)
-            let combatLVL = getScore("combatLVL", killer)
-            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
-            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
-            let combatASC = getScore("combatASC", killer)
-
-            txtclr = !txtclr;
-            const color = txtclr ? "§e" : "§f";
-            system.runTimeout(() => {
-                deadEntity.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
-            }, 0);
-
-            while (combatXP >= combatlimitXP) {
-                combatXP -= combatNextLVL;
-                combatLVL++;
-                combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-                combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-
-                setScore("combatXP", player, combatXP);
-                setScore("combatLVL", player, combatLVL);
-                setScore("combatNextLVL", player, combatNextLVL);
-                setScore("combatlimitXP", player, combatlimitXP);
-
-                system.runTimeout(() => {
-                    deadEntity.runCommand(`title "${player.name}" title Combat Leveled up!`);
-                }, 0);
-
-                if (combatLVL >= 20 && combatASC < 5) {
-                    system.runTimeout(() => {
-                        player.runCommand(`title @s title Combat Ascension Ready!`);
-                    }, 60);
-                    break;
-                }
-            }
-        }
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-        if (
-            deadEntity.typeId === `minecraft:wither`
-        ) {
-
-            addScore("combatXP", player, 1000);
-            addScore("overallXP", killer, 1000);
-
-            let combatXP = getScore("combatXP", killer)
-            let combatLVL = getScore("combatLVL", killer)
-            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
-            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
-            let combatASC = getScore("combatASC", killer)
-
-            txtclr = !txtclr;
-            const color = txtclr ? "§e" : "§f";
-            system.runTimeout(() => {
-                deadEntity.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
-            }, 0);
-
-            while (combatXP >= combatlimitXP) {
-                combatXP -= combatNextLVL;
-                combatLVL++;
-                combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-                combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-
-                setScore("combatXP", player, combatXP);
-                setScore("combatLVL", player, combatLVL);
-                setScore("combatNextLVL", player, combatNextLVL);
-                setScore("combatlimitXP", player, combatlimitXP);
-
-                system.runTimeout(() => {
-                    deadEntity.runCommand(`title "${player.name}" title Combat Leveled up!`);
-                }, 0);
-
-                if (combatLVL >= 20 && combatASC < 5) {
-                    system.runTimeout(() => {
-                        player.runCommand(`title @s title Combat Ascension Ready!`);
-                    }, 60);
-                    break;
-                }
-            }
-        }
-    
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-        if (
-            deadEntity.typeId === `minecraft:warden`
-        ) {
-
-            addScore("combatXP", player, 5000);
-            addScore("overallXP", killer, 5000);
-
-            let combatXP = getScore("combatXP", killer)
-            let combatLVL = getScore("combatLVL", killer)
-            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
-            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
-            let combatASC = getScore("combatASC", killer)
-
-            txtclr = !txtclr;
-            const color = txtclr ? "§e" : "§f";
-            system.runTimeout(() => {
-                deadEntity.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
-            }, 0);
-
-            while (combatXP >= combatlimitXP) {
-                combatXP -= combatNextLVL;
-                combatLVL++;
-                combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-                combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-
-                setScore("combatXP", player, combatXP);
-                setScore("combatLVL", player, combatLVL);
-                setScore("combatNextLVL", player, combatNextLVL);
-                setScore("combatlimitXP", player, combatlimitXP);
-
-                system.runTimeout(() => {
-                    deadEntity.runCommand(`title "${player.name}" title Combat Leveled up!`);
-                }, 0);
-
-                if (combatLVL >= 20 && combatASC < 5) {
-                    system.runTimeout(() => {
-                        player.runCommand(`title @s title Combat Ascension Ready!`);
-                    }, 60);
-                    break;
-                }
-            }
-        }
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-        if (
-            deadEntity.typeId === `minecraft:ender_dragon`
-        ) {
-
-            addScore("combatXP", player, 50000);
-            addScore("overallXP", killer, 50000);
-
-            let combatXP = getScore("combatXP", killer)
-            let combatLVL = getScore("combatLVL", killer)
-            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
-            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
-            let combatASC = getScore("combatASC", killer)
-
-            txtclr = !txtclr;
-            const color = txtclr ? "§e" : "§f";
-            system.runTimeout(() => {
-                deadEntity.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
-            }, 0);
-
-            while (combatXP >= combatlimitXP) {
-                combatXP -= combatNextLVL;
-                combatLVL++;
-                combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-                combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-
-                setScore("combatXP", player, combatXP);
-                setScore("combatLVL", player, combatLVL);
-                setScore("combatNextLVL", player, combatNextLVL);
-                setScore("combatlimitXP", player, combatlimitXP);
-
-                system.runTimeout(() => {
-                    deadEntity.runCommand(`title "${player.name}" title Combat Leveled up!`);
-                }, 0);
-
-                if (combatLVL >= 20 && combatASC < 5) {
-                    system.runTimeout(() => {
-                        player.runCommand(`title @s title Combat Ascension Ready!`);
-                    }, 60);
-                    break;
-                }
-            }
-        }
-        mobAttackers.delete(deadEntity);
     }
+    mobAttackers.delete(deadEntity);
 });
 
 // - - - - - - - - - - - - - - - - - - - - - - - ^ Combat ^ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
