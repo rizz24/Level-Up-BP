@@ -5,46 +5,48 @@ import "./onjoin/index.js"
 import { adminUsernames } from "./onjoin/index.js"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 
-export function getScore(obj, player, useZero = true) {
+function getScore(obj, player) {
     try {
         const objective = world.scoreboard.getObjective(obj);
-        return objective.getScore(player.scoreboard);
+        return objective.getScore(player) || 0;
     } catch {
-        return useZero ? 0 : NaN;
+        return 0;
     }
 }
-export function setScore(obj, player, value) {
+function setScore(obj, player, value) {
     try {
         const objective = world.scoreboard.getObjective(obj);
-        objective.setScore(player.scoreboard, value);
+        objective.setScore(player, value);
     } catch {
         player.runCommandAsync(`scoreboard objectives add ${obj} dummy`);
-        world.scoreboard.getObjective(obj).setScore(player.scoreboard, value);
+        world.scoreboard.getObjective(obj).setScore(player, value);
     }
 }
-export function addScore(obj, player, value) {
+function addScore(obj, player, value) {
     setScore(obj, player, getScore(obj, player) + value);
 }
-export function removeScore(obj, player, value) {
-    setScore(obj, player, getScore(obj, player) - value);
-}
 
-function ensurePlayerStats(player) {
-    if (isNaN(getScore("combatLVL", player, false))) setScore("combatLVL", player, 0);
-    if (isNaN(getScore("combatXP", player, false))) setScore("combatXP", player, 0);
-    if (isNaN(getScore("combatlimitXP", player, false))) setScore("combatlimitXP", player, 100);
-    if (isNaN(getScore("combatNextLVL", player, false))) setScore("combatNextLVL", player, 100);
-    if (isNaN(getScore("combatASC", player, false))) setScore("combatASC", player, 0);
+function numgen(min, max, mean, stddev) {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random(); // Avoid 0
+    while (v === 0) v = Math.random();
+    let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+
+    num = num * stddev + mean;
+
+    num = Math.max(min, Math.min(max, Math.round(num)));
+    return num;
 }
 
 let txtclr =  false;
-let allXP = 0;
-let nextXP = 0;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - MENU - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
 world.beforeEvents.itemUse.subscribe(data => {
     let player = data.source
     let title = "§l§aLeveling Orb"
-    if (data.itemStack.typeId == "level_up:level_orb") system.run(() => main(player))
+    if (data.itemStack.typeId == "minecraft:compass") system.run(() => main(player))
     
     function isAdmin(username) {
         return adminUsernames.includes(username);
@@ -58,13 +60,13 @@ world.beforeEvents.itemUse.subscribe(data => {
                 .body(`§fWelcome §a${player.nameTag}§f!\nChoose a Option Below!`)
                 .button(`§bProfile`)
                 .button(`§bAscension`)
-                .button(`§bShop`)
+                .button(`§cClose`)
                 .button(`ADMIN CONTROLS`)
 
             form.show(player).then(r => {
                 if (r.selection == 0) Profile(player)
                 if (r.selection == 1) Ascension(player)
-                if (r.selection == 2) Shop(player)
+                if (r.selection == 2) {}
                 if (r.selection == 3) Admin(player)
             })
 
@@ -74,12 +76,12 @@ world.beforeEvents.itemUse.subscribe(data => {
                 .body(`§fWelcome §a${player.nameTag}§f!\nChoose a Option Below!`)
                 .button(`§bProfile`)
                 .button(`§bAscension`)
-                .button(`§bShop`)
+                .button(`§cClose`)
             
             form.show(player).then(r => {
                 if (r.selection == 0) Profile(player)
                 if (r.selection == 1) Ascension(player)
-                if (r.selection == 2) Shop(player)
+                if (r.selection == 2) {}
             })
         }
     }
@@ -106,12 +108,12 @@ world.beforeEvents.itemUse.subscribe(data => {
 // - - - - - - - - - - - - - - - - - - - - - - - ^ ADMIN ^ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     function Profile(player) {
-        ensurePlayerStats(player);
-        let combatLVL = getScore("combatLVL", player);
-        let combatXP = getScore("combatXP", player);
-        let combatNextLVL = getScore("combatNextLVL", player);
-        let combatASC = getScore("combatASC", player);
-        let combatRemain = combatNextLVL - combatXP;
+        const overallXP = getScore("overallXP", player);
+        const combatLVL = getScore("combatLVL", player);
+        const combatXP = getScore("combatXP", player);
+        const combatNextLVL = getScore("combatNextLVL", player) || 100;
+        const combatASC = getScore("combatASC", player);
+        const combatlimitXP = combatNextLVL - combatXP;
 
         // Check if max ascension
         let maxAsc = combatASC >= 5;
@@ -121,108 +123,98 @@ world.beforeEvents.itemUse.subscribe(data => {
                 .title(`§l§bCombat Profile`)
                 .body(
                     `§a  - - - - - - - - - - - - - - - - - - -\n\n` +
-                    `    §fCombat Level: ` + combatLVL + `\n\n` +
-                    `    Combat XP: §lMAXED§r§f\n` +
+                    `    §fCombat Level: ${combatLVL}\n\n` +
+                    `    Combat XP: ${overallXP}\n` +
                     `  \n          ( MAX ASCENSION )\n\n` +
                     `    Combat Ascension: §cMAXED (5)\n\n` +
                     `§a  - - - - - - - - - - - - - - - - - - -\n\n\n`
                 )
                 .button("§l§cBack")
                 .show(player).then(r => {
-                    if (r.selection == 0) Profile(player)
-                    if (r.selection == 1) Profile(player)
+                    if (r.selection == 0) main(player)
                 });
         } else if (combatLVL >= 20) {
             new ActionFormData()
                 .title(`§l§bCombat Profile`)
                 .body(
-                    `§a  - - - - - - - - - - - - - - - - - - -\n\n` +
-                    `    §fCombat Level: ` + combatLVL + `\n\n` +
-                    `    Combat XP: §lFull§r§f\n` +
+                    `§a - - - - - - - - - - - - - - - - - - -\n\n\n` +
+                    `    §fCombat Level: ${combatLVL}\n\n` +
+                    `    Combat XP: ${overallXP}\n` +
                     `  \n          ( Ready for Ascension )\n\n` +
-                    `    Combat Ascension: ` + combatASC + `\n\n` +
-                    `§a  - - - - - - - - - - - - - - - - - - -\n\n\n`
+                    `    Combat Ascension: ${combatASC}\n\n\n` +
+                    `§a - - - - - - - - - - - - - - - - - - -\n`
                 )
+                .button("§l§aAscend")
                 .button("§l§cBack")
                 .show(player).then(r => {
-                    if (r.selection == 0) Profile(player)
-                    if (r.selection == 1) Profile(player)
+                    if (r.selection == 0) Ascension(player)
+                    if (r.selection == 1) main(player)
                 });
         } else {
             new ActionFormData()
                 .title(`§l§bCombat Profile`)
                 .body(
-                    `§a  - - - - - - - - - - - - - - - - - - -\n\n` +
-                    `    §fCombat Level: ` + combatLVL + `\n\n` +
-                    `    Combat XP:\n       ` + combatXP + ` / ` + combatNextLVL +
-                    `  \n      ( ` + combatRemain + `XP to go )\n\n` +
-                    `    Combat Ascension: ` + combatASC + `\n\n` +
-                    `§a  - - - - - - - - - - - - - - - - - - -\n\n\n`
+                    `§a  - - - - - - - - - - - - - - - - - - -\n\n\n` +
+                    `    §fCombat Level: ${combatLVL} \n\n` +
+                    `    Combat XP:\n       ${combatXP} / ${combatNextLVL}` +
+                    `  \n      ( ${combatlimitXP} XP to go )\n\n` +
+                    `    Combat Ascension: ${combatASC}\n\n\n` +
+                    `§a  - - - - - - - - - - - - - - - - - - -\n`
                 )
                 .button("§l§cBack")
                 .show(player).then(r => {
-                    if (r.selection == 0) Profile(player)
-                    if (r.selection == 1) Profile(player)
+                    if (r.selection == 0) main(player)
                 });
         }
     }
 
-    function Ascension() {
-        new ActionFormData()
-            .title(`§l§bADMIN CONTROLS`)
-            .button("§o§bCombat Profile")
-            .button("§o§bLumber Profile")
-            .button("§o§bMining Profile")
-            .button("§o§bFarming Profile")
-            .button(`§l§cBack`)
-            .show(player).then(r => {
-                if (r.selection == 0) main(player)
-                if (r.selection == 1) main(player)
-                if (r.selection == 2) main(player)
-                if (r.selection == 3) main(player)
-                if (r.selection == 4) main(player)
-            })
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    function Ascension(player) {
+        const combatLVL = getScore("combatLVL", player)
+        const combatASC = getScore("combatASC", player)
+        const canAscend = combatLVL >= 20 && combatASC < 5;
+
+        let form = new ActionFormData()
+            .title("§l§dCombat Ascension")
+            .body(
+                `§a - - - - - - - - - - - - - - - - - - -\n\n\n` +
+                `    §fCombat Level: §b${combatLVL}\n` +
+                `    §fAscensions: §d${combatASC} / 5\n\n` +
+                (canAscend
+                    ? "    §eYou are eligible to ascend!\n\n\n"
+                    : combatASC >= 5
+                    ? "   §cYou have reached max ascension.\n\n\n"
+                    : "    §7Reach level 20 to ascend.\n\n\n") +
+                `§a - - - - - - - - - - - - - - - - - - -\n`
+            )
+            .button("§l§aAscend")
+            .button("§l§cBack");
+
+        form.show(player).then(r => {
+            if (r.canceled) return;
+            if (r.selection === 0 && canAscend) {
+                // Ascend logic
+                setScore("combatASC", player, combatASC + 1);
+                setScore("combatLVL", player, 0);
+                setScore("combatXP", player, 0);
+                setScore("combatNextLVL", player, 100);
+                setScore("combatlimitXP", player, 100);
+                system.runTimeout(() => {
+                    player.runCommand(`title @s title §dAscended!`);
+                    player.runCommand('playsound random.levelup @s');
+                }, 0);
+            } else if (r.selection === 1) {
+                main(player);
+            } else if (r.selection === 0 && combatASC >= 5) {
+                player.runCommand(`title @s title §cMax Ascension Reached!`);
+                player.runCommand(`title @s subtitle §7You cannot ascend further.`);
+            } else if (r.selection === 0 && !canAscend) {
+                player.runCommand(`title @s title §cAscension Failed!`);
+                player.runCommand(`title @s subtitle §7Reach Level 20 to ascend.`);
+            }
+        });
     }
-
-    // function combatP() {
-    //     let xp = combatXP
-    //     let nxtLvl = combatNextLVL
-    //     combatRemain = nxtLvl - xp
-
-    //     if (combatCanAscend === !false) {
-    //         new ActionFormData()
-    //         .title(`§l§bCombat Profile`)
-    //         .body(
-    //             `§a  - - - - - - - - - - - - - - - - - - -\n\n`+
-    //             `    §fCombat Level: `+ combatLVL +`\n\n`+
-    //             `    Combat XP: §lFull§r§f\n` +
-    //             `  \n          ( Ready for Ascension )\n\n`+
-    //             `    Combat Ascension: `+ combatASC +`\n\n`+
-    //             `§a  - - - - - - - - - - - - - - - - - - -\n\n\n`
-    //             )
-    //         .button("§l§cBack")
-    //         .show(player).then(r => {
-    //             if (r.selection == 0) Profile(player)
-    //             if (r.selection == 1) Profile(player)
-    //         })
-    //     } else {
-    //         new ActionFormData()
-    //         .title(`§l§bCombat Profile`)
-    //         .body(
-    //             `§a  - - - - - - - - - - - - - - - - - - -\n\n`+
-    //             `    §fCombat Level: `+ combatLVL +`\n\n`+
-    //             `    Combat XP:\n       `+ combatXP +` / `+ combatNextLVL +
-    //             `  \n      ( `+ combatRemain +`XP to go )\n\n`+
-    //             `    Combat Ascension: `+ combatASC +`\n\n`+
-    //             `§a  - - - - - - - - - - - - - - - - - - -\n\n\n`
-    //             )
-    //         .button("§l§cBack")
-    //         .show(player).then(r => {
-    //             if (r.selection == 0) Profile(player)
-    //             if (r.selection == 1) Profile(player)
-    //         })
-    //     }
-    // }
 
 })
 
@@ -230,31 +222,6 @@ world.beforeEvents.itemUse.subscribe(data => {
 
 // - - - - - - - - - - - - - - - - - - - - - - - v Events v - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // - - - - - - - - - - - - - - - - - - - - - - - v Combat v - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-// world.afterEvents.entityHitEntity.subscribe((mcch) => {
-//     const EPSILON = 0.0001;
-//     const hitEntity = mcch.hitEntity;
-//     if (hitEntity.typeId === `minecraft:zombie`) {
-
-//         combatXP += 0.1;
-
-//         system.runTimeout(() => {
-//             hitEntity.runCommand(`title @p actionbar Combat +0.1XP`);
-//         }, 0);
-
-//         if (combatXP + EPSILON >= combatlimitXP) {
-//             combatXP = combatXP - combatNextLVL;
-//             combatLVL++;
-//             combatNextLVL ++;
-//             combatlimitXP ++;
-
-//             system.runTimeout(() => {
-//                 hitEntity.runCommand(`title @p title Combat Leveled up!`);
-//             }, 0);
-//         }
-
-//     }
-// });
 
 // At the top of your file:
 const mobAttackers = new Map();
@@ -277,11 +244,10 @@ world.afterEvents.entityHitEntity.subscribe((event) => {
 // On death, reward all attackers
 world.afterEvents.entityDie.subscribe((mcch) => {
     const deadEntity = mcch.deadEntity;
-
     const attackers = mobAttackers.get(deadEntity);
     if (!attackers) return;
 
-    for (const player of attackers) {
+    for (const killer of attackers) {
     
         if (
             deadEntity.typeId === `minecraft:magma_cube` ||
@@ -289,18 +255,19 @@ world.afterEvents.entityDie.subscribe((mcch) => {
         ) {
             const randomXP = numgen(3, 5, 4, 1); //min, max, mean, stddev
 
-            addScore("combatXP", player, randomXP);
+            addScore("combatXP", killer, randomXP);
+            addScore("overallXP", killer, randomXP);
 
-            let combatXP = getScore("combatXP", player);
-            let combatLVL = getScore("combatLVL", player);
-            let combatNextLVL = getScore("combatNextLVL", player);
-            let combatlimitXP = getScore("combatlimitXP", player);
-            let combatASC = getScore("combatASC", player);
+            let combatXP = getScore("combatXP", killer)
+            let combatLVL = getScore("combatLVL", killer)
+            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
+            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
+            let combatASC = getScore("combatASC", killer)
 
             txtclr = !txtclr;
             const color = txtclr ? "§e" : "§f";
             system.runTimeout(() => {
-                deadEntity.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
+                killer.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
             }, 0);
 
             while (combatXP >= combatlimitXP) {
@@ -309,13 +276,13 @@ world.afterEvents.entityDie.subscribe((mcch) => {
                 combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
                 combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
 
-                setScore("combatXP", player, combatXP);
-                setScore("combatLVL", player, combatLVL);
-                setScore("combatNextLVL", player, combatNextLVL);
-                setScore("combatlimitXP", player, combatlimitXP);
+                setScore("combatXP", killer, combatXP);
+                setScore("combatLVL", killer, combatLVL);
+                setScore("combatNextLVL", killer, combatNextLVL);
+                setScore("combatlimitXP", killer, combatlimitXP);
 
                 system.runTimeout(() => {
-                    deadEntity.runCommand(`title "${player.name}" title Combat Leveled up!`);
+                    deadEntity.runCommand(`title @p title Combat Leveled up!`);
                 }, 0);
 
                 if (combatLVL >= 20 && combatASC < 5) {
@@ -326,6 +293,8 @@ world.afterEvents.entityDie.subscribe((mcch) => {
                 }
             }
         }
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         if (
             deadEntity.typeId === `minecraft:creeper` ||
@@ -341,18 +310,19 @@ world.afterEvents.entityDie.subscribe((mcch) => {
 
             const randomXP = numgen(15, 20, 17, 2); //min, max, mean, stddev
 
-           addScore("combatXP", player, randomXP);
+            addScore("combatXP", killer, randomXP);
+            addScore("overallXP", killer, randomXP);
 
-            let combatXP = getScore("combatXP", player);
-            let combatLVL = getScore("combatLVL", player);
-            let combatNextLVL = getScore("combatNextLVL", player);
-            let combatlimitXP = getScore("combatlimitXP", player);
-            let combatASC = getScore("combatASC", player);
+            let combatXP = getScore("combatXP", killer)
+            let combatLVL = getScore("combatLVL", killer)
+            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
+            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
+            let combatASC = getScore("combatASC", killer)
 
             txtclr = !txtclr;
             const color = txtclr ? "§e" : "§f";
             system.runTimeout(() => {
-                deadEntity.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
+                killer.runCommand(`title @s actionbar ${color}Combat +${randomXP}XP`);
             }, 0);
 
             while (combatXP >= combatlimitXP) {
@@ -361,23 +331,25 @@ world.afterEvents.entityDie.subscribe((mcch) => {
                 combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
                 combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
 
-                setScore("combatXP", player, combatXP);
-                setScore("combatLVL", player, combatLVL);
-                setScore("combatNextLVL", player, combatNextLVL);
-                setScore("combatlimitXP", player, combatlimitXP);
+                setScore("combatXP", killer, combatXP);
+                setScore("combatLVL", killer, combatLVL);
+                setScore("combatNextLVL", killer, combatNextLVL);
+                setScore("combatlimitXP", killer, combatlimitXP);
 
                 system.runTimeout(() => {
-                    deadEntity.runCommand(`title "${player.name}" title Combat Leveled up!`);
+                    deadEntity.runCommand(`title @p title Combat Leveled up!`);
                 }, 0);
 
                 if (combatLVL >= 20 && combatASC < 5) {
                     system.runTimeout(() => {
-                        player.runCommand(`title @s title Combat Ascension Ready!`);
+                        killer.runCommand(`title @s title Combat Ascension Ready!`);
                     }, 60);
                     break;
                 }
             }
         }
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         if (
             deadEntity.typeId === `minecraft:blaze` ||
@@ -393,12 +365,13 @@ world.afterEvents.entityDie.subscribe((mcch) => {
             const randomXP = numgen(60, 70, 65, 3); //min, max, mean, stddev
 
             addScore("combatXP", player, randomXP);
+            addScore("overallXP", killer, randomXP);
 
-            let combatXP = getScore("combatXP", player);
-            let combatLVL = getScore("combatLVL", player);
-            let combatNextLVL = getScore("combatNextLVL", player);
-            let combatlimitXP = getScore("combatlimitXP", player);
-            let combatASC = getScore("combatASC", player);
+            let combatXP = getScore("combatXP", killer)
+            let combatLVL = getScore("combatLVL", killer)
+            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
+            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
+            let combatASC = getScore("combatASC", killer)
 
             txtclr = !txtclr;
             const color = txtclr ? "§e" : "§f";
@@ -429,6 +402,8 @@ world.afterEvents.entityDie.subscribe((mcch) => {
                 }
             }
         }
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         if (
             deadEntity.typeId === `minecraft:ghast` ||
@@ -442,12 +417,13 @@ world.afterEvents.entityDie.subscribe((mcch) => {
             const randomXP = numgen(130, 150, 140, 7); //min, max, mean, stddev
 
             addScore("combatXP", player, randomXP);
+            addScore("overallXP", killer, randomXP);
 
-            let combatXP = getScore("combatXP", player);
-            let combatLVL = getScore("combatLVL", player);
-            let combatNextLVL = getScore("combatNextLVL", player);
-            let combatlimitXP = getScore("combatlimitXP", player);
-            let combatASC = getScore("combatASC", player);
+            let combatXP = getScore("combatXP", killer)
+            let combatLVL = getScore("combatLVL", killer)
+            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
+            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
+            let combatASC = getScore("combatASC", killer)
 
             txtclr = !txtclr;
             const color = txtclr ? "§e" : "§f";
@@ -478,6 +454,8 @@ world.afterEvents.entityDie.subscribe((mcch) => {
                 }
             }
         }
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         if (
             deadEntity.typeId === `minecraft:elder_guardian` ||
@@ -491,12 +469,13 @@ world.afterEvents.entityDie.subscribe((mcch) => {
             const randomXP = numgen(220, 250, 235, 15); //min, max, mean, stddev
             
             addScore("combatXP", player, randomXP);
+            addScore("overallXP", killer, randomXP);
 
-            let combatXP = getScore("combatXP", player);
-            let combatLVL = getScore("combatLVL", player);
-            let combatNextLVL = getScore("combatNextLVL", player);
-            let combatlimitXP = getScore("combatlimitXP", player);
-            let combatASC = getScore("combatASC", player);
+            let combatXP = getScore("combatXP", killer)
+            let combatLVL = getScore("combatLVL", killer)
+            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
+            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
+            let combatASC = getScore("combatASC", killer)
 
             txtclr = !txtclr;
             const color = txtclr ? "§e" : "§f";
@@ -528,17 +507,20 @@ world.afterEvents.entityDie.subscribe((mcch) => {
             }
         }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
         if (
             deadEntity.typeId === `minecraft:wither`
         ) {
 
             addScore("combatXP", player, 1000);
+            addScore("overallXP", killer, 1000);
 
-            let combatXP = getScore("combatXP", player);
-            let combatLVL = getScore("combatLVL", player);
-            let combatNextLVL = getScore("combatNextLVL", player);
-            let combatlimitXP = getScore("combatlimitXP", player);
-            let combatASC = getScore("combatASC", player);
+            let combatXP = getScore("combatXP", killer)
+            let combatLVL = getScore("combatLVL", killer)
+            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
+            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
+            let combatASC = getScore("combatASC", killer)
 
             txtclr = !txtclr;
             const color = txtclr ? "§e" : "§f";
@@ -571,7 +553,7 @@ world.afterEvents.entityDie.subscribe((mcch) => {
         }
     
 
-// - - - - - - - - - - - - - - - - - - - - - - - v Combat v - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
         if (
@@ -579,12 +561,13 @@ world.afterEvents.entityDie.subscribe((mcch) => {
         ) {
 
             addScore("combatXP", player, 5000);
+            addScore("overallXP", killer, 5000);
 
-            let combatXP = getScore("combatXP", player);
-            let combatLVL = getScore("combatLVL", player);
-            let combatNextLVL = getScore("combatNextLVL", player);
-            let combatlimitXP = getScore("combatlimitXP", player);
-            let combatASC = getScore("combatASC", player);
+            let combatXP = getScore("combatXP", killer)
+            let combatLVL = getScore("combatLVL", killer)
+            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
+            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
+            let combatASC = getScore("combatASC", killer)
 
             txtclr = !txtclr;
             const color = txtclr ? "§e" : "§f";
@@ -616,19 +599,20 @@ world.afterEvents.entityDie.subscribe((mcch) => {
             }
         }
 
-// - - - - - - - - - - - - - - - - - - - - - - - v Combat v - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         if (
             deadEntity.typeId === `minecraft:ender_dragon`
         ) {
 
             addScore("combatXP", player, 50000);
+            addScore("overallXP", killer, 50000);
 
-            let combatXP = getScore("combatXP", player);
-            let combatLVL = getScore("combatLVL", player);
-            let combatNextLVL = getScore("combatNextLVL", player);
-            let combatlimitXP = getScore("combatlimitXP", player);
-            let combatASC = getScore("combatASC", player);
+            let combatXP = getScore("combatXP", killer)
+            let combatLVL = getScore("combatLVL", killer)
+            let combatNextLVL = getScore("combatNextLVL", killer) || 100;
+            let combatlimitXP = getScore("combatlimitXP", killer) || 100;
+            let combatASC = getScore("combatASC", killer)
 
             txtclr = !txtclr;
             const color = txtclr ? "§e" : "§f";
@@ -669,84 +653,25 @@ world.beforeEvents.chatSend.subscribe((mcch) => {
     let player = mcch.sender;
     let message = mcch.message.toLowerCase();
 
-// - - - - - - - - - - - - - - - - - - - - - - - v Rank CMD v - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    // if (message === `rank`) {
-    //     system.runTimeout(() => {
-    //         player.runCommand(`tag @s add "openmenu:main"`);
-    //     }, 0);
-    // }
-
-    // function isAdmin(username) {
-    //     return adminUsernames.includes(username);
-    // }
-
-    // function main() {
-
-    //     if (isAdmin(player.name)) {
-    //         const form = new ActionFormData()
-    //             .title(`ADMIN CONTROLS`)
-    //             .body(`§fWelcome §a${player.nameTag}§f!\nChoose a Option Below!`)
-    //             .button(`§bProfile`)
-    //             .button(`§bMoney`)
-    //             .button(`§bShop`)
-    //             .button(`ADMIN CONTROLS`)
-
-    //         form.show(player).then(r => {
-    //             if (r.selection == 0) Profile(player)
-    //             if (r.selection == 1) Money(player)
-    //             if (r.selection == 2) Shop(player)
-    //             if (r.selection == 3) Admin(player)
-    //         })
-
-    //     } else {
-    //         const form = new ActionFormData()
-    //             .title(title)
-    //             .body(`§fWelcome §a${player.nameTag}§f!\nChoose a Option Below!`)
-    //             .button(`§bProfile`)
-    //             .button(`§bMoney`)
-    //             .button(`§bShop`)
-            
-    //         form.show(player).then(r => {
-    //             if (r.selection == 0) Profile(player)
-    //             if (r.selection == 1) Money(player)
-    //             if (r.selection == 2) Shop(player)
-    //         })
-    //     }
-    // }
-
-    // system.runInterval(() => {
-    // for (let player of world .getPlayers()) {
-    //     if (player.hasTag("openmenu:main")) {
-    //         system.run(() => {
-    //             main();
-    //             player.runCommand(`tag @s remove "openmenu:main"`);
-    //         });
-    //     }
-    // }
-    // }, 20);
-
-// - - - - - - - - - - - - - - - - - - - - - - - ^ Rank CMD ^ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    if (message === `help`) {
+    if (message === `!help`) {
         mcch.cancel = true;
         system.runTimeout(() => {
             player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
                 `\n§a- - - - - - - - - - - §fHelp (1) §a- - - - - - - - - - - -\n`+
-                `§f r!help - shows this help\n`+
-                `§f r!start - gives you the RPG Menu Book\n`+
-                `§f r!bal - shows overall leaderboard\n\n`+
+                `§f !help - shows this help\n`+
+                `§f !start - gives you the RPG Menu Book\n`+
+                `§f !lb - shows overall leaderboard\n\n`+
                 `"}]}`);
         }, 0);
     }
 
-    if (message === `start`) {
+    if (message === `!start`) {
         mcch.cancel = true;
         system.runTimeout(() => {
         if (player.hasTag("has_started")) {
             player.sendMessage("You already did that. Sorry.");
         } else {
-            const item = new ItemStack("level_up:level_orb", 1);
+            const item = new ItemStack("minecraft:compass", 1);
             const inventory = player.getComponent("minecraft:inventory").container;
             inventory.addItem(item);
             player.addTag("has_started");
@@ -757,186 +682,39 @@ world.beforeEvents.chatSend.subscribe((mcch) => {
         }, 0);
     }
 
-    // if (message === `1`) {
-    //     combatXP = combatXP + combatNextLVL;
-    //     nextXP = combatXP;
-    //     allXP += nextXP;
-    //     while (combatXP >= combatlimitXP) {
-    //     combatXP = combatXP - combatNextLVL;
-    //     combatLVL++;
-    //     combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-    //     combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-    //     }
-    //     mcch.cancel = true;
-    //     system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `+1 CombatLevel (${combatLVL})\nAll XP: ${allXP}\nNext Level XP: ${combatNextLVL}\n\n`+
-    //             `"}]}`);
-    //     }, 0);
-    // }
+    if (message === `!lb`) {
+        mcch.cancel = true;
 
-    // if (message === `full`) {
-    //     combatXP = 22875;
+        // Gather all players' stats
+        let stats = [];
+        for (const p of world.getPlayers()) {
+            stats.push({
+                name: p.nameTag,
+                lvl: getScore("combatLVL", p),
+                xp: getScore("overallXP", p),
+                asc: getScore("combatASC", p)
+            });
+        }
 
-    //     if (combatLVL >= 20 && !ascended) {
-    //     system.runTimeout(() => {
-    //         deadEntity.runCommand(`title @p actionbar §cCombat Level Cap Reached! Ascend to continue.`);
-    //     }, 0);
-    //     return; // stop further XP processing
-    // }
+        // Sort and build Combat XP leaderboard
+        let xpSorted = [...stats].sort((a, b) => b.xp - a.xp);
+        let xpText = `§a- - - - - - - §fOverall Combat XP Leaderboard §a- - - - - - - -\n`;
+        xpSorted.slice(0, 5).forEach((entry, i) => {
+            xpText += `§e${i + 1}. §b${entry.name} §7- §a${entry.xp} XP §7- §aLvl ${entry.lvl}\n`;
+        });
 
-    //     allXP = combatXP;
-    //     while (combatXP >= combatlimitXP) {
-    //     combatXP = combatXP - combatNextLVL;
-    //     combatLVL++;
-    //     combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
-    //     combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
-    //     }
-    //     mcch.cancel = true;
-    //     system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `+1 CombatLevel (${combatLVL})\nAll XP: ${allXP}\nNext Level XP: ${combatNextLVL}\n\n`+
-    //             `"}]}`);
-    //     }, 0);
-    // }
+        // Sort and build Ascension leaderboard
+        let ascSorted = [...stats].sort((a, b) => b.asc - a.asc);
+        let ascText = `\n§d- - - - - - - - - §fAscension Leaderboard §d- - - - - - - - - -\n`;
+        ascSorted.slice(0, 5).forEach((entry, i) => {
+            ascText += `§e${i + 1}. §b${entry.name} §7- §d${entry.asc} Ascensions\n`;
+        });
 
-    // if (message === `up`) {
-    //     mcch.cancel = true;
+        let lbText = `\n${xpText}${ascText}\n§a- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -`;
 
-    //     combatASC++;
-    //     switch (combatASC) {
-    //         case 1:
-    //             CombatAscended = true;
-    //             break;
-    //         case 2:
-    //             CombatAscended2 = true;
-    //             break;
-    //         case 3:
-    //             CombatAscended3 = true;
-    //             break;
-    //         case 4:
-    //             CombatAscended4 = true;
-    //             break;
-    //         case 5:
-    //             CombatAscended5 = true;
-    //             break;
-    //     }
-
-    //     combatLVL = 0;
-    //     combatXP = 0;
-    //     combatlimitXP = 100;
-    //     combatNextLVL = 100;
-    //     combatRemain = 0;
-
-    //     system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `Added 1 to Combat Ascension`+
-    //             `"}]}`);
-    //     }, 0);
-
-    //     combatCanAscend = false;
-    // }
-
-    // if (message === `asc`) {
-    //     mcch.cancel = true;
-    //     if (CombatAscended === !false) {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `\n1 = true`+
-    //             `"}]}`);
-    //         }, 0);
-    //     } else {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `\n1 = false`+
-    //             `"}]}`);
-    //         }, 0);
-    //     }
-
-    //     if (CombatAscended2 === !false) {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `2 = true`+
-    //             `"}]}`);
-    //         }, 0);
-    //     } else {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `2 = false`+
-    //             `"}]}`);
-    //         }, 0);
-    //     }
-
-    //     if (CombatAscended3 === !false) {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `3 = true`+
-    //             `"}]}`);
-    //         }, 0);
-    //     } else {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `3 = false`+
-    //             `"}]}`);
-    //         }, 0);
-    //     }
-
-    //     if (CombatAscended4 === !false) {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `4 = true`+
-    //             `"}]}`);
-    //         }, 0);
-    //     } else {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `4 = false`+
-    //             `"}]}`);
-    //         }, 0);
-    //     }
-
-    //     if (CombatAscended5 === !false) {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `5 = true`+
-    //             `"}]}`);
-    //         }, 0);
-    //     } else {
-    //         system.runTimeout(() => {
-    //         player.runCommand(`tellraw @s {"rawtext":[{"text":"`+
-    //             `5 = false`+
-    //             `"}]}`);
-    //         }, 0);
-    //     }
-    // }
-
-    // if (message === `lb`) {
-    //     mcch.cancel = true;
-    //     system.runTimeout(() => {
-    //         player.runCommand(`tellraw @p {"rawtext":[{"text":"`+
-    //             `\n§a- - - - - - - - - §fLeaderboard §a- - - - - - - - - - -\n`+
-    //             `§f|   Rank   |             Name              |        Level      |\n`+
-    //             `§a- - - - - - - - - - - - - - - - - - - - - - - - - - -\n`+
-    //             `§f|    01    |             Name              |        Level      |\n`+
-    //             `§f|    02    |             Name              |        Level      |\n`+
-    //             `§f|    03    |             Name              |        Level      |\n`+
-    //             `§f|    04    |             Name              |        Level      |\n`+
-    //             `§f|    05    |             Name              |        Level      |\n`+
-    //             `§a- - - - - - - - - - - - - - - - - - - - - - - - - - -\n\n`+
-    //             `"}]}`);
-    //     }, 0);
-    // }
-
-    // if (message === `rpg cp`) {
-    //     system.runTimeout(() => {
-    //         player.runCommand(`tellraw @p {"rawtext":[{"text":"`+
-    //             `§a- - - - - - - - - - - - - - - - - - -\n`+
-    //             `    §fCombat Level: `+ combatLVL +`\n`+
-    //             `    Combat XP: `+ combatXP +`\n`+
-    //             `    Combat Ascension: `+ combatASC +`\n`+
-    //             `§a- - - - - - - - - - - - - - - - - - -\n`+
-    //             `"}]}`);
-    //     }, 0);
-    // }
+        system.runTimeout(() => {
+            player.runCommand(`tellraw @s {"rawtext":[{"text":"${lbText}"}]}`);
+        }, 0);
+    }
 
 });

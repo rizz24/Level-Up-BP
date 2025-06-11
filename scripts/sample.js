@@ -1,3 +1,10 @@
+console.warn(' main.js loaded')
+
+import { world, system, ItemStack } from "@minecraft/server"
+import "./onjoin/index.js"
+import { adminUsernames } from "./onjoin/index.js"
+import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
+
 world.beforeEvents.itemUse.subscribe(data => {
     let player = data.source
     let title = "§l§o§uGui Title Here"
