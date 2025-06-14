@@ -123,15 +123,15 @@ world.beforeEvents.itemUse.subscribe(data => {
     function Admin(player) {
         const form = new ActionFormData()
             .title("§l§cAdmin Controls")
-            .body(`§fWelcome §a${player.nameTag}§f!\nChoose a Option Below!`)
-            .button(`§bEdit Tier1 XP`)
-            .button(`§bEdit Tier2 XP`)
-            .button(`§bEdit Tier3 XP`)
-            .button(`§bEdit Tier4 XP`)
-            .button(`§bEdit Tier5 XP`)
-            .button(`§bEdit Warden XP`)
-            .button(`§bEdit Wither XP`)
-            .button(`§bEdit Ender Dragon XP`)
+            .body(`§fWelcome to Admin Controls §a${player.nameTag}§f!\nChoose a Option Below!`)
+            .button(`§bEdit Tier1 XP\n§f§oSlime, Magma Cubes`)
+            .button(`§bEdit Tier2 XP\n§f§oSkeleton, Zombie, etc.`)
+            .button(`§bEdit Tier3 XP\n§f§oEnderman, Blaze, etc.`)
+            .button(`§bEdit Tier4 XP\n§f§oGhast, Zombie Pigman, etc.`)
+            .button(`§bEdit Tier5 XP\n§f§oGuardian, Vindicator,etc.`)
+            .button(`§bEdit Warden XP\n§f§oWarden (10000)`)
+            .button(`§bEdit Wither XP\n§f§oWither (25000)`)
+            .button(`§bEdit Ender Dragon XP\n§f§oEnder Dragon (50000)`)
             .button(`§cClose`)
 
         form.show(player).then(r => {
@@ -153,13 +153,17 @@ world.beforeEvents.itemUse.subscribe(data => {
             .textField("§fEnter new XP range (min, max, mean, stddev):", "3, 5, 4, 1");
 
         form.show(player).then(r => {
-            if (r.canceled) return;
-            const input = r.formValues[0].split(",").map(Number);
-            if (input.length === 4 && input.every(num => !isNaN(num))) {
-                tierConfigs["Tier 1 Mobs"] = input;
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 1 XP updated to: ${input.join(", ")}"}]}`);
-            } else {
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            try {
+                if (r.canceled) Admin(player);
+                const input = r.formValues[0].split(",").map(Number);
+                if (input.length === 4 && input.every(num => !isNaN(num))) {
+                    tierConfigs["Tier 1 Mobs"] = input;
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 1 XP updated to: ${input.join(", ")}"}]}`);
+                } else {
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+                }
+            } catch (error) {
+                
             }
         });
     }
@@ -170,13 +174,17 @@ world.beforeEvents.itemUse.subscribe(data => {
             .textField("§fEnter new XP range (min, max, mean, stddev):", "15, 20, 7, 2");
 
         form.show(player).then(r => {
-            if (r.canceled) return;
-            const input = r.formValues[0].split(",").map(Number);
-            if (input.length === 4 && input.every(num => !isNaN(num))) {
-                tierConfigs["Tier 1 Mobs"] = input;
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 2 XP updated to: ${input.join(", ")}"}]}`);
-            } else {
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            try {
+                if (r.canceled) Admin(player);
+                const input = r.formValues[0].split(",").map(Number);
+                if (input.length === 4 && input.every(num => !isNaN(num))) {
+                    tierConfigs["Tier 2 Mobs"] = input;
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 2 XP updated to: ${input.join(", ")}"}]}`);
+                } else {
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+                }
+            } catch (error) {
+                
             }
         });
     }
@@ -187,13 +195,17 @@ world.beforeEvents.itemUse.subscribe(data => {
             .textField("§fEnter new XP range (min, max, mean, stddev):", "60, 70, 65, 3");
 
         form.show(player).then(r => {
-            if (r.canceled) return;
-            const input = r.formValues[0].split(",").map(Number);
-            if (input.length === 4 && input.every(num => !isNaN(num))) {
-                tierConfigs["Tier 1 Mobs"] = input;
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 3 XP updated to: ${input.join(", ")}"}]}`);
-            } else {
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            try {
+                if (r.canceled) Admin(player);
+                const input = r.formValues[0].split(",").map(Number);
+                if (input.length === 4 && input.every(num => !isNaN(num))) {
+                    tierConfigs["Tier 3 Mobs"] = input;
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 3 XP updated to: ${input.join(", ")}"}]}`);
+                } else {
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+                }
+            } catch (error) {
+                
             }
         });
     }
@@ -204,13 +216,17 @@ world.beforeEvents.itemUse.subscribe(data => {
             .textField("§fEnter new XP range (min, max, mean, stddev):", "130, 150, 140, 7");
 
         form.show(player).then(r => {
-            if (r.canceled) return;
-            const input = r.formValues[0].split(",").map(Number);
-            if (input.length === 4 && input.every(num => !isNaN(num))) {
-                tierConfigs["Tier 1 Mobs"] = input;
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 4 XP updated to: ${input.join(", ")}"}]}`);
-            } else {
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            try {
+                if (r.canceled) Admin(player);
+                const input = r.formValues[0].split(",").map(Number);
+                if (input.length === 4 && input.every(num => !isNaN(num))) {
+                    tierConfigs["Tier 4 Mobs"] = input;
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 4 XP updated to: ${input.join(", ")}"}]}`);
+                } else {
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+                }
+            } catch (error) {
+                
             }
         });
     }
@@ -221,13 +237,17 @@ world.beforeEvents.itemUse.subscribe(data => {
             .textField("§fEnter new XP range (min, max, mean, stddev):", "220, 250, 235, 15");
 
         form.show(player).then(r => {
-            if (r.canceled) return;
-            const input = r.formValues[0].split(",").map(Number);
-            if (input.length === 4 && input.every(num => !isNaN(num))) {
-                tierConfigs["Tier 1 Mobs"] = input;
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 5 XP updated to: ${input.join(", ")}"}]}`);
-            } else {
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+            try {
+                if (r.canceled) Admin(player);
+                const input = r.formValues[0].split(",").map(Number);
+                if (input.length === 4 && input.every(num => !isNaN(num))) {
+                    tierConfigs["Tier 5 Mobs"] = input;
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§aTier 5 XP updated to: ${input.join(", ")}"}]}`);
+                } else {
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter four numbers separated by commas."}]}`);
+                }
+            } catch (error) {
+                
             }
         });
     }
@@ -238,13 +258,17 @@ world.beforeEvents.itemUse.subscribe(data => {
             .textField("§fEnter new XP value:", "10000");
 
         form.show(player).then(r => {
-            if (r.canceled) return;
-            const input = parseInt(r.formValues[0]);
-            if (!isNaN(input)) {
-                tierConfigs["Warden"] = [input, input, input, 0];
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aWarden XP updated to: ${input}"}]}`);
-            } else {
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter a valid number."}]}`);
+            try {
+                if (r.canceled) Admin(player);
+                const input = parseInt(r.formValues[0]);
+                if (!isNaN(input)) {
+                    tierConfigs["Warden"] = [input, input, input, 0];
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§aWarden XP updated to: ${input}"}]}`);
+                } else {
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter a valid number."}]}`);
+                }
+            } catch (error) {
+                
             }
         });
     }
@@ -255,13 +279,17 @@ world.beforeEvents.itemUse.subscribe(data => {
             .textField("§fEnter new XP value:", "25000");
 
         form.show(player).then(r => {
-            if (r.canceled) return;
-            const input = parseInt(r.formValues[0]);
-            if (!isNaN(input)) {
-                tierConfigs["Wither"] = [input, input, input, 0];
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aWither XP updated to: ${input}"}]}`);
-            } else {
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter a valid number."}]}`);
+            try {
+                if (r.canceled) Admin(player);
+                const input = parseInt(r.formValues[0]);
+                if (!isNaN(input)) {
+                    tierConfigs["Wither"] = [input, input, input, 0];
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§aWither XP updated to: ${input}"}]}`);
+                } else {
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter a valid number."}]}`);
+                }
+            } catch (error) {
+                
             }
         });
     }
@@ -272,13 +300,17 @@ world.beforeEvents.itemUse.subscribe(data => {
             .textField("§fEnter new XP value:", "50000");
 
         form.show(player).then(r => {
-            if (r.canceled) return;
-            const input = parseInt(r.formValues[0]);
-            if (!isNaN(input)) {
-                tierConfigs["Ender Dragon"] = [input, input, input, 0];
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§aEnder Dragon XP updated to: ${input}"}]}`);
-            } else {
-                player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter a valid number."}]}`);
+            try {
+                if (r.canceled) Admin(player);
+                const input = parseInt(r.formValues[0]);
+                if (!isNaN(input)) {
+                    tierConfigs["Ender Dragon"] = [input, input, input, 0];
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§aEnder Dragon XP updated to: ${input}"}]}`);
+                } else {
+                    player.runCommand(`tellraw @s {"rawtext":[{"text":"§cInvalid input! Please enter a valid number."}]}`);
+                }
+            } catch (error) {
+                
             }
         });
     }
@@ -456,8 +488,8 @@ world.afterEvents.entityDie.subscribe((mcch) => {
         while (combatXP >= combatlimitXP) {
             combatXP -= combatNextLVL;
             combatLVL++;
-            combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.6));
-            combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.6));
+            combatNextLVL += Math.round(Math.pow(combatNextLVL, 0.75));
+            combatlimitXP += Math.round(Math.pow(combatlimitXP, 0.75));
 
             setScore("combatXP", killer, combatXP);
             setScore("combatLVL", killer, combatLVL);
